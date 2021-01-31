@@ -42,6 +42,25 @@ process = Processor(n_segments=70, n_bins=80, line_search_angle=0.3, max_dist_to
 vel_non_ground = process(vel_msg)
 ```
 
+### Step 3:Generate BEV image
+
+```python
+from module import lidar_projection
+import cv2
+
+img_raw = lidar_projection.birds_eye_point_cloud(vel_msg,
+                                                 side_range=(-50, 50), fwd_range=(-50, 50),
+                                                 res=0.25, min_height=-2, max_height=4)
+cv2.imwrite('img/kitti_raw.png', img_raw)
+
+
+img_non_ground = lidar_projection.birds_eye_point_cloud(vel_non_ground,
+                                                        side_range=(-50, 50), fwd_range=(-50, 50),
+                                                        res=0.25, min_height=-2, max_height=4)
+cv2.imwrite('img/kitti_non_ground.png', img_non_ground)
+```
+
+
 ## Detail Usage
 
 ```
