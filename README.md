@@ -1,5 +1,9 @@
 # Ground Removal
 
+![](https://img.shields.io/badge/version-v0.0.1-blue)
+![](https://img.shields.io/badge/python-v3.5-blue)
+![](https://img.shields.io/badge/build-passing-brightgreen)
+
 This is an implement of **Fast Segmentation of 3D Point Clouds for Ground Vehicles** [1].
 
 The BEV module in `toolbox` is generously contributed by Ronny and Dr Kevin [2] [3].
