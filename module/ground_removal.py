@@ -133,9 +133,7 @@ class Processor:
         radius = np.sqrt(x ** 2 + y ** 2)
         bin_index = np.int32(np.floor((radius - self.r_min) / self.bin_step))  # bin
 
-        point2D = np.vstack([segment_index, bin_index]).T
-
-        point5D = np.hstack([point3D, point2D])
+        point5D = np.vstack([point3D.T, segment_index, bin_index]).T
 
         return point5D
 
@@ -191,31 +189,28 @@ class Segmentation:
         xy1 = np.array(cur_line_points) @ self.matrix_new + self.matrix_one
         A = xy1[:, [0, 2]]
         y = xy1[:, [1]]
-        m, b = np.linalg.lstsq(A, y, rcond=None)[0]
-        m, b = m.item(), b.item()
+        [[m], [b]] = np.linalg.lstsq(A, y, rcond=None)[0]
         if error:
-            mse = (A @ np.array([[m, b]]).T - y) ** 2
+            mse = (A @ np.array([[m], [b]]) - y) ** 2
             return [m, b], mse
         else:
             return [m, b]
 
     def verticalDistanceToLine(self, xy):  # checked
         kMargin = 0.1
-        label = np.zeros([len(xy), 1])
+        label = np.zeros(len(xy))
 
         for d_l, d_r, m, b in self.lines:
-            distance = np.abs(xy @ np.array([[m], [0]]) + b - xy @ np.array([[0], [1]]))
-            distance[~np.logical_and(xy[:, 0] > d_l - kMargin, xy[:, 0] < d_r + kMargin)] = 0
-            label += distance
+            distance = np.abs(m * xy[:,0] + b - xy[:,1])
+            con = (xy[:, 0] > d_l - kMargin) & (xy[:, 0] < d_r + kMargin)
+            label[con] = distance[con]
 
         return label.flatten()
 
-    def fitSegmentLines(self, min_z, debug=False):
-        d_i = 0
+    def fitSegmentLines(self, min_z):
         cur_line_points = [min_z[0]]
         long_line = False
         cur_ground_height = self.sensor_height_
-        if debug: print('i:', d_i, 'line_points:', cur_line_points, '\n')
         d_i = 1
         while d_i < len(min_z):
             lst_point = cur_line_points[-1]
@@ -231,7 +226,6 @@ class Segmentation:
                 else:
                     cur_line_points = [cur_point]
             else:
-
                 cur_line_points.append(cur_point)
                 cur_line, mse = self.fitLocalLine(cur_line_points, True)
                 if (mse.max() > self.max_error_ or cur_line[0] > self.max_slope_ or long_line):
@@ -243,7 +237,6 @@ class Segmentation:
                     long_line = False
                     cur_line_points = [cur_line_points[-1]]
                     d_i -= 1
-            if debug: print('i:', d_i, 'line_points:', cur_line_points, '\n')
             d_i += 1
         if len(cur_line_points) > 2:
             new_line = self.fitLocalLine(cur_line_points)
