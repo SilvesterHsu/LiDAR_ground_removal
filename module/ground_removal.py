@@ -61,8 +61,9 @@ class Processor:
     def __call__(self, vel_msg):
         point5D = self.Model_Ground(vel_msg)
         vel_non_ground = self.Segment_Vel(point5D)
+        vel_non_ground = self.Ground_offset(vel_non_ground)
 
-        return vel_non_ground
+        return vel_non_ground[:,:3]
 
     def Model_Ground(self, vel_msg):
         point5D = self.project_5D(vel_msg)
@@ -111,9 +112,25 @@ class Processor:
 
             label[slice_list[i]:slice_list[i + 1]] = non_ground == 0
 
-        vel_non_ground = point5D[label == 1][:, :3]
+        #vel_non_ground = point5D[label == 1][:, :3]
+        vel_non_ground = point5D[label == 1]
 
         return vel_non_ground
+    
+    def Ground_offset(self, point5D):
+        label = np.zeros([point5D.shape[0]])
+        slice_list = np.r_[np.nonzero(np.r_[1, np.diff(point5D[:, 3])])[0], len(point5D)]
+
+        for i, seg_idx in enumerate(self.seg_list):
+            segment = self.segments[i]
+            point5D_seg = point5D[point5D[:, 3] == seg_idx]
+
+            z_min = point5D_seg[:,2].min()
+            offset = segment.verticalDistanceToLine_offset(point5D_seg[:, [4, 2]])  # x,y -> d,z
+            point5D[point5D[:, 3] == seg_idx, 2] = offset
+
+        return point5D
+
 
     def project_5D(self, point3D):
         '''
@@ -205,7 +222,19 @@ class Segmentation:
             con = (xy[:, 0] > d_l - kMargin) & (xy[:, 0] < d_r + kMargin)
             label[con] = distance[con]
 
-        return label.flatten()
+        return label
+
+    def verticalDistanceToLine_offset(self, xy):  # checked
+        kMargin = 0.1
+        offset = np.zeros(len(xy))
+
+        for d_l, d_r, m, b in self.lines:
+            distance = xy[:,1] - (m * xy[:,0] + b)
+            distance = np.clip(distance,0,None)
+
+            offset += distance
+
+        return offset/len(self.lines)
 
     def fitSegmentLines(self, min_z):
         cur_line_points = [min_z[0]]
