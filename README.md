@@ -97,6 +97,18 @@ Call:
         vel_non_ground(numpy.ndarray):  The local LiDAR cloud points after filter out ground info.
 ```
 
+## Slope Free
+
+Checkout to the `Slope` branch for the slope-free feature which removes both ground and the effect of the slope. The main difference between them is whether to enable the offset([offset](https://github.com/SilvesterHsu/LiDAR_ground_removal/blob/Slope/module/ground_removal.py#L64))
+
+## Longshaw dataset
+
+An example can be found [here](https://gist.github.com/SilvesterHsu/4bdf57250d9b5d95a937e09a74257dcd)
+
+The main differences lie in,
+* Is the lidar installed in [reverse](https://github.com/SilvesterHsu/LiDAR_ground_removal/blob/master/main.py#L11)?
+* The height of the lidar from the ground. ([sensor_height](https://github.com/SilvesterHsu/LiDAR_ground_removal/blob/master/main.py#L15))
+
 ## Reference
 
 [1] Himmelsbach, M., Hundelshausen, F.V. and Wuensche, H.J., 2010, June. Fast segmentation of 3D point clouds for ground vehicles. In 2010 IEEE Intelligent Vehicles Symposium (pp. 560-565). IEEE.
